@@ -1,117 +1,140 @@
-# PVZ-Fusion AI Bridge
+<div align="center">
 
-> 为《植物大战僵尸融合版 4.1》（Windows x64 / Unity IL2CPP）打造的原生桥接与 MCP 控制框架。
+# PVZ 融合版 AI Bridge
 
-[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg)](#)
-[![MCP Tools](https://img.shields.io/badge/MCP%20Tools-33-00b894.svg)](#mcp-工具一览)
-[![Platform](https://img.shields.io/badge/platform-Windows%20x64-0984e3.svg)](#快速开始)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+**让你的大肥鱼，亲自去打融合版僵尸。**
 
-提供原生游戏桥接与 33 个标准 `pvzf_*` MCP 工具。接入任意支持 MCP 的大模型后，即可让模型读取游戏实时状态，按游戏原生规则自主选卡、种植、融合与通关。
+植物大战僵尸融合版 4.1 · Windows 一键安装 · 33 个 MCP 工具 · 原生状态与操作
 
----
+![Windows x64](https://img.shields.io/badge/Windows-x64-0078D4)
+![PVZ Fusion](https://img.shields.io/badge/PVZ--Fusion-4.1-2E8B57)
+![Bridge](https://img.shields.io/badge/Bridge-0.4.0-7437B8)
+![License](https://img.shields.io/badge/License-MIT-blue)
 
-## 核心特性
+[快速开始](#快速开始) · [MCP 接入](#接入你的-ai) · [常见问题](#常见问题) · [开发与测试](#开发与测试) · [许可与致谢](#许可与致谢)
 
-- **原生直连，不抢键鼠**：直接读取阳光、冷却、波次、地形与植物/僵尸实时状态并调用原生逻辑，默认实时运行，不占用桌面键鼠。
-- **33 个标准 MCP 工具**：完整覆盖选卡、种植、融合配方查询、自动收阳光、手套移位、铁桶/肥料交互、炮台瞄准、小游戏与旅行进化商店。
-- **独立存档隔离**：游戏进程恢复前自动隔离存档与 `PlayerPrefs` 至 `runtime/saves/`，绝不触碰你的原版存档，也不修改磁盘上的 EXE/DLL。
-- **零作弊边界**：严格保留阳光费用、卡牌冷却、关卡解锁与放置规则，不提供任何修改数值或强制胜利的接口。
-- **随时夺回控制**：独占单控制器模式，断线自动释放；游戏内按 `F8` 暂停、`F9` 交还并锁定控制。
+</div>
 
----
+这是 **《植物大战僵尸融合版》PVZ-Fusion 4.1 的 AI 接入桥接项目**。把它接到支持本机 MCP 工具的 AI 助手后，AI 就能直接读取战场状态、选卡布阵、进行原生植物融合、使用手套和铲子、佩戴装备与施肥，以及游玩小游戏和旅行进化模式。
+
+玩家准备游戏，桥接负责提供工具，AI 负责思考怎么玩。项目使用 Frida 在运行时接入游戏，不修改磁盘上的游戏 EXE/DLL，并在启动前自动隔离独立存档；所有种植与交互均严格遵守原生费用、冷却与放置规则。
+
+## 能做什么
+
+| 能力 | 支持内容 |
+| --- | --- |
+| 看懂战场 | 阳光、波次、卡牌价格与剩余冷却、植物/僵尸血量与护甲、草地/水面地形与墓碑 |
+| 自主操作 | 原生选卡、开战、普通种植、素材叠种原生融合、配方查询、自动拾取阳光、铲除 |
+| 进阶机制 | 手套移位、原生拆分（按关卡/旅行词条资格）、铁桶佩戴、施肥、主动技能与炮台瞄准 |
+| 小游戏与旅行 | 三消/2048/植物棋/砸罐/扫雷等小游戏及有界输入；旅行进化积分商店与防重放交易回执 |
+| 完整流程 | 原生菜单导航、教程、任务、BOSS 实体、弹窗选项、失败重试与奖杯领奖结算 |
+| 玩家接管 | 游戏内按 F8/F9 立即停止并锁定 AI；玩家按 F10 重新允许接管 |
+
+AI 的实际水平取决于模型与提示词，项目不提供任何修改阳光、跳过冷却或强制胜利的作弊接口。
 
 ## 快速开始
 
-### 环境要求
-- Windows x64 + Python **3.11+**（无需 Node.js、编译器或模型 API Key）
-- 自行准备正版/原版《植物大战僵尸融合版 4.1》（安装器会按 [profile.json](profile.json) 核验关键文件 SHA256，本仓库不分发游戏本体）
+需要 **Windows x64**、Python **3.11+** 和支持本机 stdio MCP 的 AI 客户端。请自行准备《植物大战僵尸融合版 4.1》，本项目不分发游戏本体。
 
-### 1. 克隆并一键隔离安装
+### 1. 安装
+
+克隆或解压本项目源码后，在 PowerShell 中运行：
 
 ```powershell
-git clone https://github.com/dy0000/pvz-fusion-ai-bridge.git
-cd pvz-fusion-ai-bridge
-
-# 方式 A：指定已有游戏目录（自动复制隔离副本到 ./game 并创建 .venv）
+# 指定已有游戏目录（自动复制隔离副本到 ./game 并安装独立 .venv）
 .\install.ps1 -GamePath "D:\Games\植物大战僵尸融合版4.1" -RegisterCodex
 
-# 方式 B：指定游戏压缩包
+# 或指定游戏压缩包
 .\install.ps1 -GameArchive "C:\Downloads\植物大战僵尸融合版4.1.zip" -RegisterCodex
 ```
 
-> 省略 `-RegisterCodex` 时，仍会在 `generated/mcp.json` 与 `generated/codex.toml` 生成通用 MCP 配置，可直接导入其他 MCP 客户端。
+安装器会按 [profile.json](profile.json) 严格校验游戏关键文件哈希，并自动准备 `.venv/` 依赖与 MCP 配置文件（无需 Node.js、编译器或模型 API Key）。省略 `-RegisterCodex` 则仅生成通用配置文件。
 
-### 2. 启动游戏与桥接
+### 2. 启动
 
-双击根目录的 **`start.cmd`** 启动隔离游戏与桥接宿主（服务名 `pvz_fusion`，仅监听 `127.0.0.1:47634`）。
+双击项目根目录的 **`start.cmd`** 启动隔离游戏与桥接宿主（仅监听 `127.0.0.1:47634`，独立存档位于 `runtime/saves/`，绝不触碰原存档）。
 
-> 请勿直接双击 `game/` 内的 EXE，否则不会启用运行时存档隔离。
+> 请勿直接双击 `game/` 里的游戏 EXE，否则不会启用运行时存档隔离。
 
-### 3. 接入大模型开玩
+### 3. 让 AI 开始玩
 
-在你的 MCP 客户端中加载 `generated/mcp.json`（参考 [mcp.example.json](mcp.example.json)），并将 [AI_PLAYER_PROMPT.txt](AI_PLAYER_PROMPT.txt) 作为提示词发给模型，即可使用全部 `pvzf_*` 工具。
+重新加载 AI 客户端的 MCP，把 **`generated/START_HERE.txt`** 或 [AI_PLAYER_PROMPT.txt](AI_PLAYER_PROMPT.txt) 发给 AI，并说明想玩的关卡或目标。结束时让 AI 交还控制；随时可按 **F8/F9** 停止，玩家按 **F10** 重新允许。
 
----
+## 接入你的 AI
 
-## MCP 工具一览
+### Codex
 
-共提供 **33 个** `pvzf_*` 工具（行列坐标均从 **1** 开始，战斗动作需携带最新 `battle_id`）：
+使用 `-RegisterCodex` 时会自动注册独立服务 `pvz_fusion`，等价于：
 
-| 分类 | 工具列表 | 说明 |
-| --- | --- | --- |
-| **会话与控制** | `pvzf_capabilities`, `pvzf_take_control`, `pvzf_release_control`, `pvzf_stop` | 查询版本/能力、独占接管、安全交还与停止 |
-| **观察与菜单** | `pvzf_observe`, `pvzf_menu`, `pvzf_menu_action`, `pvzf_flow`, `pvzf_collect_reward` | 读取实时战场快照、原生菜单、教程/结算与领奖 |
-| **基础战斗** | `pvzf_choose_card`, `pvzf_start_battle`, `pvzf_plant`, `pvzf_shovel`, `pvzf_collect`, `pvzf_auto_collect`, `pvzf_next_wave` | 选卡开战、普通种植与原生融合、铲除、拾取阳光与提前下一波 |
-| **融合与格检** | `pvzf_fusion_recipe`, `pvzf_inspect_cell`, `pvzf_placement_check` | 原生配方查询、地形/坑墓/承载物及分层放置检查 |
-| **进阶机制** | `pvzf_mechanisms`, `pvzf_move_plant`, `pvzf_disassemble`, `pvzf_interact`, `pvzf_fire`, `pvzf_cycle_towards` | 手套移动、原生拆分、铁桶佩戴/施肥/主动技能、炮台瞄准与方向切换 |
-| **选项与小游戏** | `pvzf_choices`, `pvzf_choice_action`, `pvzf_minigame_observe`, `pvzf_minigame_action`, `pvzf_minigame_input` | 原生弹窗选项、小游戏专用动作及有界游戏内输入 |
-| **旅行进化** | `pvzf_rogue_observe`, `pvzf_rogue_action`, `pvzf_purchase_receipt` | 积分商店、合成、装备/消耗品操作与防重放交易回执 |
+```powershell
+codex mcp add pvz_fusion -- "C:\PATH\pvz-fusion-ai-bridge\.venv\Scripts\python.exe" -X utf8 "C:\PATH\pvz-fusion-ai-bridge\scripts\run_mcp.py"
+```
+
+没有 CLI 时，可将 `generated\codex.toml` 中的 `[mcp_servers.pvz_fusion]` 合并到你的 Codex 配置中（注意保留原有其他服务条目）。配置格式参考 [OpenAI MCP 文档](https://learn.chatgpt.com/docs/extend/mcp)。
+
+### 其他 MCP 客户端
+
+导入安装生成的 **`generated\mcp.json`**，或手动添加 stdio 服务：
+
+- 类型：**stdio / 本地命令**
+- 命令：项目 `.venv\Scripts\python.exe` 的绝对路径
+- 参数：`-X`、`utf8`、`scripts\run_mcp.py` 的绝对路径（分别作为数组项）
+- 服务名：`pvz_fusion`；工具前缀：`pvzf_`（共 33 个工具）
+
+`mcp.example.json` 仅作结构示例，实际使用时请以 `generated\` 中带本机绝对路径的配置为准。
 
 <details>
-<summary><b>展开查看原生规则与协议边界说明</b></summary>
+<summary><b>展开查看 33 个 MCP 工具清单</b></summary>
 
-- **动作确认**：种植、融合、铲除与佩戴装备以回包 `status=Committed` 及实际战场状态变化为准；结果未知或断线时绝不自动重放。
-- **拆分资格**：普通冒险无法仅凭 500 阳光拆分，以 `observe.disassembly` 返回的原生资格（如旅行“拆分”词条或指定关卡）为准。
-- **掉落物交互**：`observe.equipment_drops` 导出当前铁器与肥料 `item_id`，通过 `pvzf_interact` 同时携带 `item_id` 与目标植物 `entity_id` 执行原生拾取与作用。
-- **有界输入**：小游戏输入限 `frames=1..120`（最长约 3.5 秒，至多 32 点世界坐标轨迹），未揭开的地雷与罐子隐藏内容不导出。
-- **交易防重放**：`pvzf_rogue_action` 必须携带唯一 `transaction_id` 与预算上限（`max_spend` / `max_health_cost`），交易先落盘再调用原生，断线后先查 `pvzf_purchase_receipt`。
+| 分类 | 工具 |
+| --- | --- |
+| 控制与能力 | `pvzf_capabilities`, `pvzf_take_control`, `pvzf_release_control`, `pvzf_stop` |
+| 观察与流程 | `pvzf_observe`, `pvzf_menu`, `pvzf_menu_action`, `pvzf_flow`, `pvzf_collect_reward` |
+| 选卡与战斗 | `pvzf_choose_card`, `pvzf_start_battle`, `pvzf_plant`, `pvzf_shovel`, `pvzf_collect`, `pvzf_auto_collect`, `pvzf_next_wave` |
+| 融合与格检 | `pvzf_fusion_recipe`, `pvzf_inspect_cell`, `pvzf_placement_check` |
+| 进阶机制 | `pvzf_mechanisms`, `pvzf_move_plant`, `pvzf_disassemble`, `pvzf_interact`, `pvzf_fire`, `pvzf_cycle_towards` |
+| 选项与小游戏 | `pvzf_choices`, `pvzf_choice_action`, `pvzf_minigame_observe`, `pvzf_minigame_action`, `pvzf_minigame_input` |
+| 旅行进化 | `pvzf_rogue_observe`, `pvzf_rogue_action`, `pvzf_purchase_receipt` |
 
 </details>
 
----
+## 停止、更新与卸载
 
-## 快捷键与安全停止
+- **暂时停止 AI**：在游戏窗口获得焦点时按 **F8**（停止并打开原生暂停）或 **F9**（交还并锁定控制）；仅玩家按 **F10** 可重新允许接管。正常结束也应让 AI 调用 `pvzf_release_control`。
+- **退出游戏与宿主**：双击 **`stop.cmd`** 请求宿主交还并正常关闭隔离游戏。若遇到 `release_blocked`，请等待释放或手动正常关闭游戏，勿强杀宿主或启动第二控制器。
+- **更新**：交还并用 `stop.cmd` 正常退出后，备份 `runtime/saves/`，再替换新源码即可。请勿在游戏运行时热替换代码。
+- **卸载**：退出游戏后，在 AI 客户端移除 `pvz_fusion` MCP 条目（Codex 可运行 `codex mcp remove pvz_fusion`），再删除项目目录。存档是否保留由玩家自行决定。
 
-| 操作 | 作用 |
+## 常见问题
+
+| 现象 | 处理 |
 | --- | --- |
-| `F8`（游戏窗口内） | 立即停止接管并打开游戏原生暂停 |
-| `F9`（游戏窗口内） | 交还并锁定控制，禁止 AI 重新接管 |
-| `F10`（游戏窗口内） | 由玩家手动解除锁定，重新允许接管 |
-| 双击 `stop.cmd` | 确认完整释放后正常退出隔离游戏 |
+| 安装提示 `Unsupported Fusion 4.1 build` | 当前适配融合版 4.1 Windows x64 构建，须核对 `profile.json` 中的文件哈希 |
+| Frida 下载失败 | 检查到 PyPI 的网络连接，可按需要配置 pip 镜像或代理后重试 |
+| AI 看不到工具 | 确认已导入 `generated/mcp.json` 并重启/重载客户端；工具前缀为 `pvzf_` |
+| `connection.json` 不存在 | 先双击 `start.cmd` 启动隔离游戏与宿主 |
+| 47634 端口被占用 | 已有另一个桥接宿主正在运行，先正常交还并退出后再启动 |
+| `playerLocked` / F8、F9 后 AI 不能动 | 玩家在游戏窗口内按 **F10** 解除停止锁，AI 无法自行解除 |
+| `rejected_by_game` | 游戏原生拒绝了本次动作，重新观察阳光、冷却、地形和教程状态 |
+| 超时或断线后不确定是否生效 | 重新观察现场，结果未知的动作不自动重放，商店交易先查 `pvzf_purchase_receipt` |
+| Windows 安全软件提示拦截 | Frida 运行时注入可能触发误报，请核对开源代码后按自身安全策略处理 |
 
-> `runtime/connection.json` 保存本机随机通信 token，切勿公开分享。
+> `runtime/connection.json` 保存本机单次随机通信 token，反馈问题时请勿公开该文件或整份运行目录。
 
----
-
-## 目录结构与测试
+## 开发与测试
 
 ```text
-├── src/                  # 原生 IL2CPP 桥接、存档隔离与扩展机制 (7 个 JS 模块)
-├── scripts/
-│   ├── run_bridge.py     # 独占本地桥接宿主 (127.0.0.1:47634)
-│   ├── run_mcp.py        # 标准 stdio MCP 服务适配器
-│   ├── client.py         # Python 协议客户端
-│   ├── receipts.py       # 旅行商店防重放交易回执
-│   ├── observe_game.py   # 只读观察工具
-│   ├── install.py        # 隔离安装与配置生成器
-│   └── verify_*.py       # MCP / 实机基础接口验证夹具
-├── tests/                # 离线协议、回执与原生边界单元测试
-├── install.ps1 / .cmd    # Windows 一键安装入口
-└── start.cmd / stop.cmd  # 启停脚本
+pvz-fusion-ai-bridge/
+├─ install.cmd / install.ps1     # Windows 一键隔离安装
+├─ start.cmd / stop.cmd          # 启动与安全退出
+├─ src/                          # 游戏内 Frida 原生桥接与存档隔离 (7 个 JS 模块)
+├─ scripts/                      # 独占宿主、MCP 适配、客户端与验收夹具
+├─ tests/                        # 离线协议、回执与原生边界测试
+├─ AI_PLAYER_PROMPT.txt          # 供接入大模型阅读的原生操作规范
+└─ profile.json                  # 已适配游戏构建的 SHA256 清单
 ```
 
-运行全部离线单元测试：
+运行离线单元测试：
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -p test_protocol.py -v
@@ -122,8 +145,18 @@ node tests/test_interactions.cjs
 node tests/test_rogue.cjs
 ```
 
----
+打包干净源码发布包（输出在 `dist/`，附逐文件 SHA256 清单）：
 
-## 开源协议
+```powershell
+.\.venv\Scripts\python.exe -X utf8 scripts\package_release.py
+```
 
-本项目桥接代码采用 [MIT License](LICENSE) 开源。游戏本体、美术、音乐、Unity 与第三方运行库归各自权利人所有，不随本仓库分发。
+## 许可与致谢
+
+桥接代码与项目文档采用 [MIT License](LICENSE)。游戏本体、美术、音乐、Unity 与第三方运行库归各自权利人所有，不属于本项目的 MIT 授权范围。
+
+感谢《植物大战僵尸融合版》作者及所有游戏社区创作者。
+
+## 社区
+
+本开源项目已链接并认可 [LINUX DO 社区](https://linux.do)。
