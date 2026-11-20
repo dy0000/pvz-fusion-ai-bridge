@@ -1,0 +1,10 @@
+{
+  "game": "PVZ-Fusion",
+  "version": "4.1",
+  "sha256": {
+    "PlantsVsZombiesRH.exe": "d38afabdc98f8d910dba495fc8eb0868965aa0251a96db190ffba3773704f5b1",
+    "GameAssembly.dll": "5b2399a1b38668cdb43a7bc0377932a1a8c19c286b9809e350a1aaa83f95d671",
+    "UnityPlayer.dll": "48afdb3a6730132cb2f2b1d82ec07df1a1d7e43ca8b8ed63f81137ed1d55a32a",
+    "PlantsVsZombiesRH_Data/il2cpp_data/Metadata/global-metadata.dat": "1aafcdc791e40f9a2897777fd1e076a1948544a1cf7531a0708bd625df7f7673"
+  }
+}

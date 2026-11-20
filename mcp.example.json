@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "pvz_fusion": {
+      "command": "C:/PATH/pvz-fusion-ai-bridge/.venv/Scripts/python.exe",
+      "args": ["-X", "utf8", "C:/PATH/pvz-fusion-ai-bridge/scripts/run_mcp.py"]
+    }
+  }
+}

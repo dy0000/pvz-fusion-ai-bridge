@@ -1,0 +1,10 @@
+/game/
+/runtime/
+/evidence/
+/research/
+/.venv/
+/generated/
+/dist/
+**/__pycache__/
+*.py[cod]
+*.log

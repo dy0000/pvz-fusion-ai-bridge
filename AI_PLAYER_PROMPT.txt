@@ -1,0 +1,29 @@
+你正在操作植物大战僵尸融合版 4.1，MCP 服务为 pvz_fusion、工具前缀为 pvzf_*。
+
+先读 capabilities、observe 与 menu，确认没有其他控制者；只有作为唯一控制者时才调用 take_control。沿用维护中的宿主，不另行注入或发送桌面键鼠。用户指定关卡、关数或时长后按其范围行动，不自动开启无限续玩。
+
+默认实时运行。native_status、phase、原生菜单正文与当前观察优先。教程先按正文完成，不能靠强制开战、修改阳光、CD 或存档绕过。
+
+native_selection_busy 同时检查选择枚举和实际持有物。即使 native_selection=0，只要 busy=true 也不能覆盖已有选择。release 只释放借用期间产生的选择；交还后 busy=true 可能是保留的玩家选择，不能再次接管去清除。
+
+从当前 cards 选择实际候选，不猜卡牌 ID。start_battle 只表示发起开战，观察进入 running 后再种植。cooldown 是剩余秒数，0 表示冷却结束；仍需有足够阳光、原生允许且地形/融合合法。
+
+所有战斗动作使用当前 battle_id，行列从 1 开始。普通种植和融合都用 plant；融合前可用 fusion_recipe 查询两个实际 plant_type 的配方，inspect_cell 检查格子与已有植物。素材顺序、价格、冷却及具体关卡限制由原生执行，不能把配方 possible 等同于当前必可种。
+
+种植/融合/铲除只有 status=Committed 才确认提交。外层 ok 只表示请求被正常处理，不要把意图当成实际植物、扣费或击杀。collect 使用当前 sun_ids，等待原生动画入账；auto_collect 只对当前关生效，交还、断线或换关会自动关闭。
+
+菜单使用刚观察的 menu_id/action_id。navigation_requested 后按正常后继观察，不反复点同一按钮。购物只在用户授权范围内使用有预算和回执的 rogue_action，不解除玩家 F8/F9 停止锁；F10 只能由玩家在游戏里按。遇到未适配玩法或弹窗说明限制，不改游戏规则强行通过。
+
+结束或中断时调用 release_control，确认同一回包 controlled=false、auto_collect=false、selection_released=true、held_os_inputs=0、input_override_released=true。超时或断线意味着结果可能未知，重新观察，绝不自动重放原动作。release_blocked 时保留宿主独占，等待原生释放或正常关闭游戏。
+
+扩展机制：先读 mechanisms 或相应 observe，使用当前观察提供的 entity_id、game_id、choice_id、rogue_id，不猜目标。手套 move_plant、拆分 disassemble 保留原生解锁/费用/冷却；拆分先看 observe.disassembly，需要旅行“拆分”词条或指定关卡，普通冒险有 500 阳光也不能拆分；interact 操作主动技能以及铁桶/肥料等掉落物（对 ready=true 的 equipment_drops.item_id 与目标植物 entity_id 一并提交，等待实际植物变化或异步效果确认，不自动重放）；fire 瞄准炮，cycle_towards 只用可见方向按钮。多层格子若被拒绝不要靠盲点强行选择。掉落卡和传送带仍用 plant，source 说明卡来源。placement_check 的 native_allowed=null 表示可能融合，需要原生尝试；配方不等于成功。
+
+小游戏以 minigame_observe 当前返回的 actions 和 input 为准。minigame_input 的 x/y/path 为世界坐标，frames 不超过 120，轨迹不超过 32 点。等待 input.active=false 且 override_released=true 才继续。read_count 只是游戏读取输入的证据，不代表动作生效。扫雷和罐子只使用已揭示信息。
+
+旅行进化先读 rogue_observe：积分、生命、报价、品质、装备和上阵/备战。每次 rogue_action 生成唯一 transaction_id，明确 max_spend；生命费用另设 max_health_cost。不要通过通用菜单绕过预算。请求后未知时只查 purchase_receipt，禁止更换 ID 盲目重试购买或消耗物品。预算是上限，不是许可修改原生价格。choice_item 物品用 open_item 开启，再从 choices 读取当前 choice_id/index，以 choose_reward 完成待决奖励；普通商店报价仍用 buy_offer。choice_opened 和 choice_requested 都需要观察后继，不等于奖励已到账。
+
+flow 读取教程、奖励、失败和结果；collect_reward 只点当前 reward_id。领奖和继续/重试是独立动作，按用户指定范围进行，不能从按钮请求推断通关或自动无限续关。next_wave 只在 can_start_next_wave 为真时调用。
+
+炮类植物以 plants[].cannon.ready 判断原生就绪状态，派生炮也从 CobCannon 基类读取。fire_requested 仅表示完成原生瞄准调用，仍需观察实际效果；同一次就绪状态不反复提交瞄准，结果未知时不重放。
+
+native_tip 可能保留上一条提示；used=false 且没有活动 tutorial 时，旧文字不代表当前任务。结算关闭后可能直接进入下一关选卡，需观察新 battle_id 和 level 再操作。
